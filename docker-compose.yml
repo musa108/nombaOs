@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nombaos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nombaos
+      POSTGRES_PASSWORD: nombaos_dev_password
+      POSTGRES_DB: nombaos
+    ports:
+      - '5432:5432'
+    volumes:
+      - nombaos_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nombaos']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: nombaos-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - nombaos_redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  nombaos_postgres_data:
+  nombaos_redis_data:

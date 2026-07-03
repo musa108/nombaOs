@@ -1,0 +1,171 @@
+// This is your Prisma schema file
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+model User {
+  id         String   @id @default(cuid())
+  clerkId    String   @unique
+  email      String   @unique
+  name       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  business   Business?
+  conversations Conversation[]
+}
+
+model Business {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  businessName String
+  industry     String
+  nombaAccountId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  customers    Customer[]
+  products     Product[]
+  transactions Transaction[]
+  invoices     Invoice[]
+  memories     BusinessMemory[]
+  notifications Notification[]
+}
+
+model Customer {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+  name       String
+  phone      String?
+  email      String?
+  createdAt  DateTime @default(now())
+  transactions Transaction[]
+  invoices   Invoice[]
+}
+
+model Product {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+  name       String
+  category   String?
+  quantity   Int      @default(0)
+  price      Decimal  @db.Decimal(15, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id])
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  amount      Decimal  @db.Decimal(15, 2)
+  type        TransactionType
+  status      TransactionStatus @default(PENDING)
+  reference   String?  @unique
+  description String?
+  nombaRef    String?
+  createdAt   DateTime @default(now())
+}
+
+model Invoice {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id])
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  invoiceNo   String   @unique
+  amount      Decimal  @db.Decimal(15, 2)
+  status      InvoiceStatus @default(PENDING)
+  dueDate     DateTime?
+  items       Json
+  nombaPaymentLink String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  messages  Json     @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Vector Memory layer (System Architecture §7).
+// Stores embedded business facts, merchant preferences, and notable conversation
+// moments so the AI can retrieve semantically relevant context beyond the last
+// 20 messages of raw history. embedding is Unsupported because Prisma has no
+// native `vector` scalar; it's read/written via $queryRaw / $executeRaw in
+// MemoryService using the `pgvector` npm package for (de)serialization.
+model BusinessMemory {
+  id         String                 @id @default(cuid())
+  businessId String
+  business   Business               @relation(fields: [businessId], references: [id])
+  kind       MemoryKind
+  content    String
+  metadata   Json?
+  embedding  Unsupported("vector(1536)")?
+  createdAt  DateTime               @default(now())
+
+  @@index([businessId])
+}
+
+enum MemoryKind {
+  PREFERENCE
+  FACT
+  CONVERSATION_SUMMARY
+}
+
+// Smart Notifications (Core Features §6 / Development Phases Phase 7).
+// Written by a scheduled job (NotificationsService) that checks for low stock,
+// overdue invoices, and revenue drops without the merchant having to ask.
+model Notification {
+  id         String           @id @default(cuid())
+  businessId String
+  business   Business         @relation(fields: [businessId], references: [id])
+  type       NotificationType
+  title      String
+  message    String
+  read       Boolean          @default(false)
+  metadata   Json?
+  createdAt  DateTime         @default(now())
+
+  @@index([businessId, read])
+}
+
+enum NotificationType {
+  LOW_STOCK
+  OVERDUE_INVOICE
+  SALES_DROP
+  UNUSUAL_SPENDING
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+  TRANSFER
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}
