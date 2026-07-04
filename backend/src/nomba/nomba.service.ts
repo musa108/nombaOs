@@ -34,8 +34,14 @@ export class NombaService {
       const expiresIn: number = response.data?.expires_in ?? 3600;
 
       if (!token) {
-        this.logger.error('Nomba auth response missing access_token', response.data);
-        throw new HttpException('Nomba authentication failed: no token returned', HttpStatus.UNAUTHORIZED);
+        this.logger.error(
+          'Nomba auth response missing access_token',
+          response.data,
+        );
+        throw new HttpException(
+          'Nomba authentication failed: no token returned',
+          HttpStatus.UNAUTHORIZED,
+        );
       }
 
       this.accessToken = token;
@@ -43,7 +49,10 @@ export class NombaService {
       return token;
     } catch (err) {
       this.logger.error('Nomba auth failed', err?.response?.data);
-      throw new HttpException('Nomba authentication failed', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'Nomba authentication failed',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
   }
 
@@ -132,7 +141,10 @@ export class NombaService {
     return response.data;
   }
 
-  async verifyBankAccount(accountNumber: string, bankCode: string): Promise<any> {
+  async verifyBankAccount(
+    accountNumber: string,
+    bankCode: string,
+  ): Promise<any> {
     const headers = await this.authHeaders();
     const response = await this.client.get('/accounts/resolve', {
       headers,
@@ -191,7 +203,10 @@ export class NombaService {
 
   // ─── Settlements ───────────────────────────────────────────────────────────────
 
-  async getSettlements(params?: { startDate?: string; endDate?: string }): Promise<any> {
+  async getSettlements(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<any> {
     const headers = await this.authHeaders();
     const accountId = this.config.get('NOMBA_ACCOUNT_ID');
     const response = await this.client.get(

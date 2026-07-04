@@ -5,9 +5,7 @@ generator client {
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  extensions = [vector]
+  provider = "postgresql"
 }
 
 model User {
@@ -115,7 +113,7 @@ model BusinessMemory {
   kind       MemoryKind
   content    String
   metadata   Json?
-  embedding  Unsupported("vector(1536)")?
+
   createdAt  DateTime               @default(now())
 
   @@index([businessId])

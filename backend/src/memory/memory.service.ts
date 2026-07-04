@@ -57,7 +57,7 @@ export class MemoryService {
         model: 'gemini-embedding-001',
         contents: text.slice(0, 8000), // guard pathologically long inputs
         config: {
-          outputDimensionality: 1536,    // matches vector(1536) column
+          outputDimensionality: 1536, // matches vector(1536) column
           taskType: 'SEMANTIC_SIMILARITY',
         },
       });
@@ -117,7 +117,13 @@ export class MemoryService {
     if (!vector) return [];
 
     const rows = await this.prisma.$queryRawUnsafe<
-      { id: string; kind: MemoryKind; content: string; metadata: unknown; similarity: string }[]
+      {
+        id: string;
+        kind: MemoryKind;
+        content: string;
+        metadata: unknown;
+        similarity: string;
+      }[]
     >(
       `SELECT id, kind, content, metadata,
               1 - (embedding <=> $1::vector) AS similarity
@@ -130,7 +136,7 @@ export class MemoryService {
       limit,
     );
 
-    return rows.map(r => ({
+    return rows.map((r) => ({
       id: r.id,
       kind: r.kind,
       content: r.content,
@@ -142,9 +148,9 @@ export class MemoryService {
   /** Returns a formatted string injected into the AI system prompt. */
   async recallAsContext(businessId: string, query: string): Promise<string> {
     const memories = await this.recall(businessId, query, 5);
-    const relevant = memories.filter(m => m.similarity > 0.3);
+    const relevant = memories.filter((m) => m.similarity > 0.3);
     if (relevant.length === 0) return '';
-    return relevant.map(m => `[${m.kind}] ${m.content}`).join('\n');
+    return relevant.map((m) => `[${m.kind}] ${m.content}`).join('\n');
   }
 
   /** Prune old CONVERSATION_SUMMARY entries to keep the table lean. */
@@ -156,6 +162,6 @@ export class MemoryService {
       businessId,
       cutoff,
     );
-    return result as number;
+    return result;
   }
 }

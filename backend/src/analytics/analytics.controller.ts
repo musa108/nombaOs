@@ -17,6 +17,9 @@ export class AnalyticsController {
 
   @Get('trend')
   getTrend(@Request() req, @Query('days') days: number) {
-    return this.analyticsService.getDailyRevenueTrend(req.user.business.id, days || 30);
+    return this.analyticsService.getDailyRevenueTrend(
+      req.user.business.id,
+      days || 30,
+    );
   }
 }

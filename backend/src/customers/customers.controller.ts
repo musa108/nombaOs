@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
@@ -16,13 +25,19 @@ export class CustomersController {
   }
 
   @Post()
-  create(@Request() req, @Body() dto: { name: string; email?: string; phone?: string }) {
+  create(
+    @Request() req,
+    @Body() dto: { name: string; email?: string; phone?: string },
+  ) {
     return this.customersService.create(req.user.business.id, dto);
   }
 
   @Get('top')
   getTop(@Request() req, @Query('limit') limit: number) {
-    return this.customersService.getTopCustomers(req.user.business.id, limit || 10);
+    return this.customersService.getTopCustomers(
+      req.user.business.id,
+      limit || 10,
+    );
   }
 
   @Get('lifetime-value')

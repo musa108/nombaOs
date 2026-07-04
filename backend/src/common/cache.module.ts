@@ -22,7 +22,6 @@ import { CacheService } from './cache.service';
       useFactory: async (config: ConfigService) => {
         const redisUrl = config.get<string>('REDIS_URL');
         if (!redisUrl) {
-          // eslint-disable-next-line no-console
           console.warn(
             '[CacheModule] REDIS_URL not set — falling back to in-memory cache. ' +
               'This will NOT persist across restarts or share state across instances. ' +

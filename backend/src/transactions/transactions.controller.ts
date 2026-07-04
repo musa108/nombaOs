@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
@@ -21,7 +29,14 @@ export class TransactionsController {
     @Query('limit') limit: number,
   ) {
     const business = req.user.business;
-    return this.txService.findAll(business.id, { type, status, startDate, endDate, page, limit });
+    return this.txService.findAll(business.id, {
+      type,
+      status,
+      startDate,
+      endDate,
+      page,
+      limit,
+    });
   }
 
   @Post()
@@ -35,12 +50,19 @@ export class TransactionsController {
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
-    return this.txService.syncFromNomba(req.user.business.id, startDate, endDate);
+    return this.txService.syncFromNomba(
+      req.user.business.id,
+      startDate,
+      endDate,
+    );
   }
 
   @Get('report')
   getSalesReport(@Request() req, @Query('period') period: any) {
-    return this.txService.getSalesReport(req.user.business.id, period || 'month');
+    return this.txService.getSalesReport(
+      req.user.business.id,
+      period || 'month',
+    );
   }
 
   @Post('transfer')

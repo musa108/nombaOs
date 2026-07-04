@@ -6,15 +6,10 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { SentryGlobalFilter } from '@sentry/nestjs/setup';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
-
-  // Sentry global exception filter — captures unhandled exceptions and 5xx
-  // errors automatically, then rethrows so NestJS error handling still works.
-  app.useGlobalFilters(new SentryGlobalFilter());
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
@@ -29,11 +24,15 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-  SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, config));
+  SwaggerModule.setup(
+    'api/docs',
+    app,
+    SwaggerModule.createDocument(app, config),
+  );
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
   logger.log(`NombaOS API running on :${port}`);
   logger.log(`Swagger docs at http://localhost:${port}/api/docs`);
 }
-bootstrap();
+void bootstrap();

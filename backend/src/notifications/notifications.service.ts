@@ -30,7 +30,9 @@ export class NotificationsService {
   @Cron(CronExpression.EVERY_HOUR)
   async checkLowStock() {
     this.logger.debug('Running low-stock notification check');
-    const businesses = await this.prisma.business.findMany({ select: { id: true } });
+    const businesses = await this.prisma.business.findMany({
+      select: { id: true },
+    });
 
     for (const { id: businessId } of businesses) {
       const lowStock = await this.prisma.product.findMany({
@@ -49,11 +51,16 @@ export class NotificationsService {
       }
 
       for (const product of lowStock) {
-        await this.upsertNotification(businessId, 'LOW_STOCK', `low_${product.id}`, {
-          title: `Low stock: ${product.name}`,
-          message: `Only ${product.quantity} unit${product.quantity === 1 ? '' : 's'} of ${product.name} left. Consider restocking soon.`,
-          metadata: { productId: product.id, quantity: product.quantity },
-        });
+        await this.upsertNotification(
+          businessId,
+          'LOW_STOCK',
+          `low_${product.id}`,
+          {
+            title: `Low stock: ${product.name}`,
+            message: `Only ${product.quantity} unit${product.quantity === 1 ? '' : 's'} of ${product.name} left. Consider restocking soon.`,
+            metadata: { productId: product.id, quantity: product.quantity },
+          },
+        );
       }
     }
   }
@@ -79,11 +86,20 @@ export class NotificationsService {
       });
 
       const customerName = invoice.customer?.name ?? 'a customer';
-      await this.upsertNotification(invoice.businessId, 'OVERDUE_INVOICE', invoice.id, {
-        title: `Overdue invoice: ${invoice.invoiceNo}`,
-        message: `Invoice ${invoice.invoiceNo} for ₦${Number(invoice.amount).toLocaleString()} from ${customerName} is overdue. Send a reminder to collect payment.`,
-        metadata: { invoiceId: invoice.id, invoiceNo: invoice.invoiceNo, amount: Number(invoice.amount) },
-      });
+      await this.upsertNotification(
+        invoice.businessId,
+        'OVERDUE_INVOICE',
+        invoice.id,
+        {
+          title: `Overdue invoice: ${invoice.invoiceNo}`,
+          message: `Invoice ${invoice.invoiceNo} for ₦${Number(invoice.amount).toLocaleString()} from ${customerName} is overdue. Send a reminder to collect payment.`,
+          metadata: {
+            invoiceId: invoice.id,
+            invoiceNo: invoice.invoiceNo,
+            amount: Number(invoice.amount),
+          },
+        },
+      );
     }
   }
 
@@ -92,21 +108,38 @@ export class NotificationsService {
   @Cron('0 8 * * *')
   async checkRevenueDrop() {
     this.logger.debug('Running revenue-drop notification check');
-    const businesses = await this.prisma.business.findMany({ select: { id: true } });
+    const businesses = await this.prisma.business.findMany({
+      select: { id: true },
+    });
 
     const today = new Date();
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const startOfYesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+    const startOfToday = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const startOfYesterday = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() - 1,
+    );
 
     for (const { id: businessId } of businesses) {
       const [todayRev, yesterdayRev] = await Promise.all([
         this.prisma.transaction.aggregate({
-          where: { businessId, type: 'CREDIT', status: 'SUCCESSFUL', createdAt: { gte: startOfToday } },
+          where: {
+            businessId,
+            type: 'CREDIT',
+            status: 'SUCCESSFUL',
+            createdAt: { gte: startOfToday },
+          },
           _sum: { amount: true },
         }),
         this.prisma.transaction.aggregate({
           where: {
-            businessId, type: 'CREDIT', status: 'SUCCESSFUL',
+            businessId,
+            type: 'CREDIT',
+            status: 'SUCCESSFUL',
             createdAt: { gte: startOfYesterday, lt: startOfToday },
           },
           _sum: { amount: true },
@@ -119,11 +152,20 @@ export class NotificationsService {
       // Only fire if yesterday had meaningful revenue and today is more than 30% lower
       if (y > 1000 && t < y * 0.7) {
         const drop = (((y - t) / y) * 100).toFixed(0);
-        await this.upsertNotification(businessId, 'SALES_DROP', `drop_${startOfToday.toISOString().slice(0, 10)}`, {
-          title: `Sales down ${drop}% today`,
-          message: `Today's revenue (₦${t.toLocaleString()}) is ${drop}% lower than yesterday (₦${y.toLocaleString()}). Ask the AI assistant "Why are sales dropping?" for analysis.`,
-          metadata: { todayRevenue: t, yesterdayRevenue: y, dropPercent: Number(drop) },
-        });
+        await this.upsertNotification(
+          businessId,
+          'SALES_DROP',
+          `drop_${startOfToday.toISOString().slice(0, 10)}`,
+          {
+            title: `Sales down ${drop}% today`,
+            message: `Today's revenue (₦${t.toLocaleString()}) is ${drop}% lower than yesterday (₦${y.toLocaleString()}). Ask the AI assistant "Why are sales dropping?" for analysis.`,
+            metadata: {
+              todayRevenue: t,
+              yesterdayRevenue: y,
+              dropPercent: Number(drop),
+            },
+          },
+        );
       }
     }
   }
@@ -133,13 +175,17 @@ export class NotificationsService {
   @Cron(CronExpression.EVERY_2_HOURS)
   async checkUnusualSpending() {
     this.logger.debug('Running unusual-spending check');
-    const businesses = await this.prisma.business.findMany({ select: { id: true } });
+    const businesses = await this.prisma.business.findMany({
+      select: { id: true },
+    });
 
     for (const { id: businessId } of businesses) {
       // Find the average debit over last 30 days
       const stats = await this.prisma.transaction.aggregate({
         where: {
-          businessId, type: 'DEBIT', status: 'SUCCESSFUL',
+          businessId,
+          type: 'DEBIT',
+          status: 'SUCCESSFUL',
           createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
         },
         _avg: { amount: true },
@@ -153,7 +199,9 @@ export class NotificationsService {
       const threshold = avg * 3;
       const recentLarge = await this.prisma.transaction.findMany({
         where: {
-          businessId, type: 'DEBIT', status: 'SUCCESSFUL',
+          businessId,
+          type: 'DEBIT',
+          status: 'SUCCESSFUL',
           amount: { gt: threshold },
           createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) },
         },
@@ -163,7 +211,11 @@ export class NotificationsService {
         await this.upsertNotification(businessId, 'UNUSUAL_SPENDING', tx.id, {
           title: 'Unusual spending detected',
           message: `A debit of ₦${Number(tx.amount).toLocaleString()} was recorded — ${(Number(tx.amount) / avg).toFixed(1)}× your average. Reference: ${tx.reference ?? 'N/A'}.`,
-          metadata: { transactionId: tx.id, amount: Number(tx.amount), average: avg },
+          metadata: {
+            transactionId: tx.id,
+            amount: Number(tx.amount),
+            average: avg,
+          },
         });
       }
     }
@@ -179,9 +231,16 @@ export class NotificationsService {
     businessId: string,
     type: 'LOW_STOCK' | 'OVERDUE_INVOICE' | 'SALES_DROP' | 'UNUSUAL_SPENDING',
     dedupeKey: string,
-    payload: { title: string; message: string; metadata: Record<string, unknown> },
+    payload: {
+      title: string;
+      message: string;
+      metadata: Record<string, unknown>;
+    },
   ) {
-    const id = `notif_${businessId.slice(0, 8)}_${dedupeKey}`.replace(/[^a-zA-Z0-9_]/g, '_');
+    const id = `notif_${businessId.slice(0, 8)}_${dedupeKey}`.replace(
+      /[^a-zA-Z0-9_]/g,
+      '_',
+    );
 
     await this.prisma.$executeRawUnsafe(
       `INSERT INTO "Notification" (id, "businessId", type, title, message, read, metadata, "createdAt")
@@ -210,7 +269,10 @@ export class NotificationsService {
   }
 
   async markRead(id: string) {
-    return this.prisma.notification.update({ where: { id }, data: { read: true } });
+    return this.prisma.notification.update({
+      where: { id },
+      data: { read: true },
+    });
   }
 
   async markAllRead(businessId: string) {
@@ -221,6 +283,8 @@ export class NotificationsService {
   }
 
   async getUnreadCount(businessId: string) {
-    return this.prisma.notification.count({ where: { businessId, read: false } });
+    return this.prisma.notification.count({
+      where: { businessId, read: false },
+    });
   }
 }

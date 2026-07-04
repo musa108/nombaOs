@@ -16,10 +16,8 @@ export class AnalyticsService {
   // for. 2 min balances freshness (a new sale should show up reasonably
   // fast) against cutting DB load on the hot path.
   async getRevenueAnalytics(businessId: string) {
-    return this.cache.getOrSet(
-      `revenue-analytics:${businessId}`,
-      120_000,
-      () => this.computeRevenueAnalytics(businessId),
+    return this.cache.getOrSet(`revenue-analytics:${businessId}`, 120_000, () =>
+      this.computeRevenueAnalytics(businessId),
     );
   }
 
@@ -46,14 +44,15 @@ export class AnalyticsService {
         _count: true,
       });
 
-    const [today, yesterday, thisWeek, lastWeek, thisMonth, lastMonth] = await Promise.all([
-      getRevenue(periods.today),
-      getRevenue(periods.yesterday, periods.today),
-      getRevenue(periods.thisWeek),
-      getRevenue(periods.lastWeek, periods.thisWeek),
-      getRevenue(periods.thisMonth),
-      getRevenue(periods.lastMonth, periods.thisMonth),
-    ]);
+    const [today, yesterday, thisWeek, lastWeek, thisMonth, lastMonth] =
+      await Promise.all([
+        getRevenue(periods.today),
+        getRevenue(periods.yesterday, periods.today),
+        getRevenue(periods.thisWeek),
+        getRevenue(periods.lastWeek, periods.thisWeek),
+        getRevenue(periods.thisMonth),
+        getRevenue(periods.lastMonth, periods.thisMonth),
+      ]);
 
     const todayRev = Number(today._sum.amount || 0);
     const yesterdayRev = Number(yesterday._sum.amount || 0);
@@ -70,9 +69,16 @@ export class AnalyticsService {
       month: { revenue: monthRev, count: thisMonth._count },
       lastMonth: { revenue: lastMonthRev, count: lastMonth._count },
       growth: {
-        daily: yesterdayRev > 0 ? ((todayRev - yesterdayRev) / yesterdayRev) * 100 : 0,
-        weekly: lastWeekRev > 0 ? ((weekRev - lastWeekRev) / lastWeekRev) * 100 : 0,
-        monthly: lastMonthRev > 0 ? ((monthRev - lastMonthRev) / lastMonthRev) * 100 : 0,
+        daily:
+          yesterdayRev > 0
+            ? ((todayRev - yesterdayRev) / yesterdayRev) * 100
+            : 0,
+        weekly:
+          lastWeekRev > 0 ? ((weekRev - lastWeekRev) / lastWeekRev) * 100 : 0,
+        monthly:
+          lastMonthRev > 0
+            ? ((monthRev - lastMonthRev) / lastMonthRev) * 100
+            : 0,
       },
     };
   }
@@ -84,40 +90,42 @@ export class AnalyticsService {
   // getRevenueAnalytics, so this mostly saves the 4 extra parallel queries
   // (customer count, invoice groupBy, low-stock products, recent tx list).
   async getBusinessContext(businessId: string): Promise<string> {
-    return this.cache.getOrSet(
-      `business-context:${businessId}`,
-      30_000,
-      () => this.computeBusinessContext(businessId),
+    return this.cache.getOrSet(`business-context:${businessId}`, 30_000, () =>
+      this.computeBusinessContext(businessId),
     );
   }
 
   private async computeBusinessContext(businessId: string): Promise<string> {
-    const [business, analytics, customers, invoices, products, recentTx] = await Promise.all([
-      this.prisma.business.findUnique({ where: { id: businessId } }),
-      this.getRevenueAnalytics(businessId),
-      this.prisma.customer.count({ where: { businessId } }),
-      this.prisma.invoice.groupBy({
-        by: ['status'],
-        where: { businessId },
-        _count: true,
-        _sum: { amount: true },
-      }),
-      this.prisma.product.findMany({
-        where: { businessId, quantity: { lt: 10 } },
-        take: 5,
-      }),
-      this.prisma.transaction.findMany({
-        where: { businessId },
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-        include: { customer: true },
-      }),
-    ]);
+    const [business, analytics, customers, invoices, products, recentTx] =
+      await Promise.all([
+        this.prisma.business.findUnique({ where: { id: businessId } }),
+        this.getRevenueAnalytics(businessId),
+        this.prisma.customer.count({ where: { businessId } }),
+        this.prisma.invoice.groupBy({
+          by: ['status'],
+          where: { businessId },
+          _count: true,
+          _sum: { amount: true },
+        }),
+        this.prisma.product.findMany({
+          where: { businessId, quantity: { lt: 10 } },
+          take: 5,
+        }),
+        this.prisma.transaction.findMany({
+          where: { businessId },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+          include: { customer: true },
+        }),
+      ]);
 
-    const invoiceSummary = invoices.reduce((acc, i) => {
-      acc[i.status] = { count: i._count, amount: Number(i._sum.amount || 0) };
-      return acc;
-    }, {} as Record<string, any>);
+    const invoiceSummary = invoices.reduce(
+      (acc, i) => {
+        acc[i.status] = { count: i._count, amount: Number(i._sum.amount || 0) };
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
 
     return JSON.stringify({
       business: {
@@ -128,8 +136,11 @@ export class AnalyticsService {
       revenue: analytics,
       customerCount: customers,
       invoices: invoiceSummary,
-      lowStockProducts: products.map(p => ({ name: p.name, quantity: p.quantity })),
-      recentTransactions: recentTx.map(t => ({
+      lowStockProducts: products.map((p) => ({
+        name: p.name,
+        quantity: p.quantity,
+      })),
+      recentTransactions: recentTx.map((t) => ({
         amount: Number(t.amount),
         type: t.type,
         status: t.status,

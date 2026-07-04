@@ -21,7 +21,12 @@ export class BusinessService {
       where: { userId },
       include: {
         _count: {
-          select: { customers: true, products: true, transactions: true, invoices: true },
+          select: {
+            customers: true,
+            products: true,
+            transactions: true,
+            invoices: true,
+          },
         },
       },
     });
@@ -36,7 +41,9 @@ export class BusinessService {
   }
 
   async getDashboardSummary(userId: string) {
-    const business = await this.prisma.business.findUnique({ where: { userId } });
+    const business = await this.prisma.business.findUnique({
+      where: { userId },
+    });
     if (!business) throw new NotFoundException('Business not set up');
 
     const today = new Date();

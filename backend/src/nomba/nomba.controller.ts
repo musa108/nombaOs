@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import { NombaService } from './nomba.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
@@ -22,7 +22,12 @@ export class NombaController {
     @Query('page') page: number,
     @Query('limit') limit: number,
   ) {
-    return this.nombaService.getTransactions({ startDate, endDate, page, limit });
+    return this.nombaService.getTransactions({
+      startDate,
+      endDate,
+      page,
+      limit,
+    });
   }
 
   @Get('banks')
@@ -39,24 +44,30 @@ export class NombaController {
   }
 
   @Post('transfer')
-  initiateTransfer(@Body() dto: {
-    amount: number;
-    beneficiaryAccountNumber: string;
-    beneficiaryBankCode: string;
-    narration: string;
-    reference: string;
-  }) {
+  initiateTransfer(
+    @Body()
+    dto: {
+      amount: number;
+      beneficiaryAccountNumber: string;
+      beneficiaryBankCode: string;
+      narration: string;
+      reference: string;
+    },
+  ) {
     return this.nombaService.initiateTransfer(dto);
   }
 
   @Post('payment-link')
-  createPaymentLink(@Body() dto: {
-    amount: number;
-    description: string;
-    reference: string;
-    customerEmail?: string;
-    customerName?: string;
-  }) {
+  createPaymentLink(
+    @Body()
+    dto: {
+      amount: number;
+      description: string;
+      reference: string;
+      customerEmail?: string;
+      customerName?: string;
+    },
+  ) {
     return this.nombaService.createPaymentLink(dto);
   }
 

@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { BusinessModule } from './business/business.module';
 import { CustomersModule } from './customers/customers.module';
@@ -17,6 +19,8 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PostHogModule } from './common/posthog.module';
 
 @Module({
+  controllers: [AppController],
+  providers: [AppService],
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),

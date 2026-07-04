@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { InvoicesService } from './invoices.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
@@ -17,7 +27,11 @@ export class InvoicesController {
     @Query('page') page: number,
     @Query('limit') limit: number,
   ) {
-    return this.invoicesService.findAll(req.user.business.id, { status, page, limit });
+    return this.invoicesService.findAll(req.user.business.id, {
+      status,
+      page,
+      limit,
+    });
   }
 
   @Post()

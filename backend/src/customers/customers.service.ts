@@ -24,7 +24,10 @@ export class CustomersService {
     });
   }
 
-  async create(businessId: string, data: { name: string; email?: string; phone?: string }) {
+  async create(
+    businessId: string,
+    data: { name: string; email?: string; phone?: string },
+  ) {
     return this.prisma.customer.create({ data: { businessId, ...data } });
   }
 

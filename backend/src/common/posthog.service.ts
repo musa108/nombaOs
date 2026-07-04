@@ -26,12 +26,15 @@ export class PostHogService implements OnModuleDestroy {
   constructor(private config: ConfigService) {
     const apiKey = this.config.get<string>('POSTHOG_API_KEY');
     if (!apiKey) {
-      this.logger.warn('POSTHOG_API_KEY not set — analytics disabled. Set it in .env to enable.');
+      this.logger.warn(
+        'POSTHOG_API_KEY not set — analytics disabled. Set it in .env to enable.',
+      );
       return;
     }
 
     this.client = new PostHog(apiKey, {
-      host: this.config.get<string>('POSTHOG_HOST') ?? 'https://app.posthog.com',
+      host:
+        this.config.get<string>('POSTHOG_HOST') ?? 'https://app.posthog.com',
       flushAt: this.config.get<string>('NODE_ENV') === 'production' ? 20 : 1,
       flushInterval: 10_000,
     });
@@ -60,15 +63,30 @@ export class PostHogService implements OnModuleDestroy {
 
   // ─── Named event helpers ─────────────────────────────────────────────────────
 
-  trackAiChat(userId: string, businessId: string, toolsUsed: string[], conversationId: string): void {
+  trackAiChat(
+    userId: string,
+    businessId: string,
+    toolsUsed: string[],
+    conversationId: string,
+  ): void {
     this.capture({
       distinctId: userId,
       event: 'ai_chat_message_sent',
-      properties: { businessId, toolsUsed, toolCount: toolsUsed.length, conversationId },
+      properties: {
+        businessId,
+        toolsUsed,
+        toolCount: toolsUsed.length,
+        conversationId,
+      },
     });
   }
 
-  trackInvoiceCreated(userId: string, businessId: string, amount: number, hasPaymentLink: boolean): void {
+  trackInvoiceCreated(
+    userId: string,
+    businessId: string,
+    amount: number,
+    hasPaymentLink: boolean,
+  ): void {
     this.capture({
       distinctId: userId,
       event: 'invoice_created',
@@ -76,7 +94,12 @@ export class PostHogService implements OnModuleDestroy {
     });
   }
 
-  trackTransferConfirmed(userId: string, businessId: string, amount: number, reference: string): void {
+  trackTransferConfirmed(
+    userId: string,
+    businessId: string,
+    amount: number,
+    reference: string,
+  ): void {
     this.capture({
       distinctId: userId,
       event: 'transfer_confirmed',

@@ -26,7 +26,11 @@ export class InvoicesService {
       customerEmail?: string;
       customerId?: string;
       amount: number;
-      items: Array<{ description: string; quantity: number; unitPrice: number }>;
+      items: Array<{
+        description: string;
+        quantity: number;
+        unitPrice: number;
+      }>;
       dueDate?: string;
       generatePaymentLink?: boolean;
     },
@@ -36,26 +40,32 @@ export class InvoicesService {
     // Look up or create customer
     let customerId = data.customerId;
     if (!customerId && data.customerName) {
-      const customer = await this.prisma.customer.upsert({
-        where: { id: data.customerId || 'non-existent' },
-        create: {
-          businessId,
-          name: data.customerName,
-          email: data.customerEmail,
-        },
-        update: {},
-      }).catch(async () => {
-        // If upsert by id fails, find or create by name+business
-        let found = await this.prisma.customer.findFirst({
-          where: { businessId, name: data.customerName },
-        });
-        if (!found) {
-          found = await this.prisma.customer.create({
-            data: { businessId, name: data.customerName, email: data.customerEmail },
+      const customer = await this.prisma.customer
+        .upsert({
+          where: { id: data.customerId || 'non-existent' },
+          create: {
+            businessId,
+            name: data.customerName,
+            email: data.customerEmail,
+          },
+          update: {},
+        })
+        .catch(async () => {
+          // If upsert by id fails, find or create by name+business
+          let found = await this.prisma.customer.findFirst({
+            where: { businessId, name: data.customerName },
           });
-        }
-        return found;
-      });
+          if (!found) {
+            found = await this.prisma.customer.create({
+              data: {
+                businessId,
+                name: data.customerName,
+                email: data.customerEmail,
+              },
+            });
+          }
+          return found;
+        });
       customerId = customer.id;
     }
 
@@ -107,7 +117,10 @@ export class InvoicesService {
     return invoice;
   }
 
-  async findAll(businessId: string, filters: { status?: string; page?: number; limit?: number } = {}) {
+  async findAll(
+    businessId: string,
+    filters: { status?: string; page?: number; limit?: number } = {},
+  ) {
     const { status, page = 1, limit = 20 } = filters;
     const skip = (page - 1) * limit;
     const where: any = { businessId };
@@ -159,7 +172,7 @@ export class InvoicesService {
       invoice,
       reminderSent: true,
       paymentLink: invoice.nombaPaymentLink,
-      message: `Reminder for invoice ${invoice.invoiceNo} worth ₦${invoice.amount} sent to ${invoice.customer?.name}`,
+      message: `Reminder for invoice ${invoice.invoiceNo} worth ₦${invoice.amount.toString()} sent to ${invoice.customer?.name}`,
     };
   }
 

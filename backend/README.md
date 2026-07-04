@@ -1,98 +1,93 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# NombaOS Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+This is the progressive NestJS backend API that powers **NombaOS** — the AI Merchant Operating System. It coordinates data flows between the PostgreSQL database (via Prisma), Clerk authentication, Sentry error tracking, PostHog analytics, the **Nomba API**, and an autonomous agentic AI layer using **OpenAI GPT-4o**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Project Architecture
 
-## Description
+The backend codebase is modular, built with the following component directories in `src/`:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- `auth/`: Handles JWT sync from Clerk. Validates incoming requests using a guard that decodes and validates Clerk-issued session tokens.
+- `business/`: Manages merchant profiles, industry categorization, and aggregates dashboard metrics (today/week/month revenue, margins, and growth trend).
+- `customers/`: CRUD endpoints for customers with advanced analytical queries (LTV calculation and top-customers ranking using raw PostgreSQL SQL).
+- `products/`: CRUD endpoints for inventory, stock levels, and valuations.
+- `transactions/`: Synchronizes transaction history from Nomba API and persists details locally in PostgreSQL.
+- `invoices/`: Creates invoices, generates Nomba checkout orders (payment links), and runs daily sweeps to check and mark overdue invoices.
+- `nomba/`: Integrates with Nomba SDK/endpoints (OAuth2 client-credentials flow, balance queries, bank list retrieval, bank account resolution, bank transfers, and settlement history).
+- `analytics/`: Computes operational metrics, sales trends, and constructs structured context for the AI prompt.
+- `ai/`: Built around an autonomous function-calling loop with **OpenAI GPT-4o**. Integrates 13 system tools for interactive merchant operations.
 
-## Project setup
+## Database Schema (Prisma)
 
+The application uses PostgreSQL with the following entities (defined in [schema.prisma](file:///c:/Users/sysadmin/Downloads/NombaOS_full_implementation/backend/prisma/schema.prisma)):
+
+1. **User**: Clerk authentication attributes, email, and conversation threads.
+2. **Business**: Merchant name, industry, and optional Nomba Account ID mapping.
+3. **Customer**: General contact details, associated with transactions and invoices.
+4. **Product**: Pricing (using high-precision `Decimal` scale), category, and inventory levels.
+5. **Transaction**: Credits, debits, references, and status (synchronized from the Nomba API).
+6. **Invoice**: Invoice number, line items, status (PENDING, PAID, OVERDUE, CANCELLED), and Nomba payment checkout link.
+7. **Conversation**: Persistence layer storing agentic loops and chat history in JSON arrays.
+8. **BusinessMemory**: Vector database mapping (powered by `pgvector` raw queries) storing custom facts and preferences.
+9. **Notification**: Automated triggers for low stock, overdue invoices, and sales anomalies.
+
+---
+
+## AI Agent Tools
+
+The backend registers 13 function-calling tools with the OpenAI GPT-4o model:
+* `get_revenue_report`: Detailed sales and revenue summaries.
+* `get_top_customers`: Lists highest spending client metrics.
+* `get_low_stock_products`: Identifies products near/at zero count.
+* `create_invoice`: Automates invoice assembly and Nomba payment link generation.
+* `send_invoice_reminder`: Triggers payment reminder workflows.
+* `initiate_transfer`: Creates draft fund transfers (requires strict security confirmation).
+* `execute_confirmed_transfer`: Dispatches real bank transfers.
+* `get_nomba_balance`: Fetches active Nomba balance.
+* `verify_bank_account`: Validates account numbers and bank codes.
+* `list_banks`: Retrieves list of valid financial institutions.
+* `get_settlements`: Obtains settlement logs.
+* `get_notifications`: Retrieves unread merchant alerts.
+* `analyze_business_health`: Triggers advanced LLM analysis of revenue patterns.
+
+---
+
+## Running Locally
+
+### Prerequisites
+- Node.js (v22+)
+- Docker (for PostgreSQL & Redis)
+
+### Step 1: Start Databases
 ```bash
-$ npm install
+docker-compose up -d
 ```
 
-## Compile and run the project
+### Step 2: Environment Variables
+Create `.env` using `.env.example` as a template and provide:
+- `DATABASE_URL` (Defaults to local PostgreSQL docker container)
+- `JWT_SECRET` (For verifying and signing sessions)
+- `NOMBA_CLIENT_ID` / `NOMBA_CLIENT_SECRET` / `NOMBA_ACCOUNT_ID` (Credentials for the Nomba sandbox or production API)
+- `OPENAI_API_KEY` (Required for the AI agent)
+- `CLERK_SECRET_KEY`
 
+### Step 3: Run Database Migrations
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm run prisma:migrate -- --name init
 ```
 
-## Run tests
-
+### Step 4: Run Application
 ```bash
-# unit tests
-$ npm run test
+# Development (watch mode)
+npm run start:dev
 
-# e2e tests
-$ npm run test:e2e
+# Linting
+npm run lint
 
-# test coverage
-$ npm run test:cov
+# Build production bundle
+npm run build
+
+# Start production server
+npm run start:prod
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+API documentation is accessible at `http://localhost:3001/api/docs` using Swagger.

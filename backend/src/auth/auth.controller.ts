@@ -1,4 +1,11 @@
-import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { ClerkAuthGuard } from './clerk-auth.guard';
@@ -26,7 +33,9 @@ export class AuthController {
 
     if (type === 'user.created') {
       const email = data.email_addresses?.[0]?.email_address ?? '';
-      const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || 'Merchant';
+      const name =
+        [data.first_name, data.last_name].filter(Boolean).join(' ') ||
+        'Merchant';
       await this.authService.syncClerkUser(data.id, email, name);
     }
 

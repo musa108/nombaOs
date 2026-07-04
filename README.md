@@ -16,7 +16,7 @@ Full-stack implementation per the hackathon plan: **NestJS + PostgreSQL/Prisma b
 | AI Assistant | ✅ GPT-4o function-calling loop, 13 real tools, conversation persistence, transfer confirmation flow |
 | Frontend | ✅ Landing, onboarding, dashboard, chat, transactions, invoices, customers, products — all wired to live API |
 
-**Build status:** Frontend (`npm run build`) passes clean — 0 errors, 0 warnings, Next.js 15.5.19, all 12 routes compiled. Backend passes a full `tsc --noEmit` typecheck with 0 errors. See [Known Limitation](#known-limitation-prisma-client-generation) below for the one step you must run yourself.
+**Build & Lint status:** Frontend (`npm run build` and `npm run lint`) passes 100% clean — 0 errors, 0 warnings, Next.js 15.5.19, all 12 routes compiled. Backend passes lint (`npm run lint`) and compilation typecheck (`npx tsc --noEmit` and `npm run build`) clean with 0 errors and 0 warnings. See [Known Limitation](#known-limitation-prisma-client-generation) below for the one step you must run yourself.
 
 ---
 
@@ -147,3 +147,79 @@ On your machine, `npm install` in `backend/` will run `prisma generate` automati
 - **Clerk webhook signature verification**: `auth/clerk-auth.guard.ts` is written but not wired to a controller route — add a `POST /auth/webhook` endpoint guarded by it if you want Clerk-initiated user sync (deletions, profile updates) instead of only frontend-initiated sync.
 - **Redis caching**: installed and in `package.json` but not yet wired into any service — the plan calls for it as a cache layer for frequent queries; I left actual cache-key strategy to you since it depends on which queries you find slow in practice.
 - **Nomba response shape**: I built the service against Nomba's documented v1 REST patterns, but didn't have live credentials to confirm exact response field names (e.g. `checkoutLink` vs `data.checkoutLink`). I defensively check both shapes in a few places (see `ai.service.ts`'s `create_payment_link` case) — if a field comes back `undefined` in practice, check the real response shape and adjust the one-line accessor.
+
+---
+
+## Production Deployment Walkthrough
+
+To deploy NombaOS to a live production environment, follow these steps to provision, configure, and connect the components.
+
+### 1. Database Provisioning (PostgreSQL)
+1. Provision a PostgreSQL database instance (v16+) using a cloud provider (e.g., Railway, Neon, AWS RDS, Supabase).
+2. Connect to the database and ensure the `vector` extension is enabled (required for semantic memory storage in `BusinessMemory`):
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS vector;
+   ```
+3. Copy the database connection URL (e.g., `postgresql://username:password@host:port/dbname?sslmode=require`).
+
+### 2. Cache & Session Layer Provisioning (Redis)
+1. Provision a Redis database (v7+) (e.g., Upstash Redis, Railway Redis plugin, Redis Labs).
+2. Copy the Redis URI connection string (e.g., `redis://default:password@host:port`).
+
+### 3. Backend Deployment (Railway)
+1. Log in to your [Railway](https://railway.app/) dashboard and create a new project.
+2. Select **Deploy from GitHub** and connect this repository.
+3. In the service settings, configure the **Root Directory** to `backend`.
+4. Railway will automatically detect [backend/railway.toml](file:///c:/Users/sysadmin/Downloads/NombaOS_full_implementation/backend/railway.toml) and build the project using [backend/Dockerfile](file:///c:/Users/sysadmin/Downloads/NombaOS_full_implementation/backend/Dockerfile).
+5. Add the necessary **Environment Variables** (see checklist below) in the service "Variables" tab.
+6. The startup sequence configured in `railway.toml` will run:
+   ```bash
+   npm run prisma:migrate -- --name deploy && node dist/main
+   ```
+   This automatically applies any pending database schema updates and boots the NestJS server.
+7. Under settings, generate a domain (or bind a custom domain). Copy this API URL (e.g., `https://backend-production.up.railway.app`).
+
+### 4. Frontend Deployment (Vercel)
+1. Log in to your [Vercel](https://vercel.com/) dashboard and click **Add New Project**.
+2. Select the GitHub repository.
+3. Configure the Project Settings:
+   - **Framework Preset**: Next.js
+   - **Root Directory**: `frontend`
+4. Add the frontend environment variables (see checklist below) in the "Environment Variables" tab.
+5. Click **Deploy**. Vercel will compile the application and provide a production domain (e.g., `https://nombaos.vercel.app`).
+
+### 5. Authentication Setup (Clerk Production)
+1. In your [Clerk Dashboard](https://dashboard.clerk.com/), switch your project instance from **Development** to **Production**.
+2. Add your Vercel production frontend URL (`https://nombaos.vercel.app`) as an allowed origin.
+3. Update the production API keys on both the frontend and backend.
+4. Set up redirect configurations in Clerk settings:
+   - **After Sign-In URL**: `/dashboard`
+   - **After Sign-Up URL**: `/onboarding`
+
+---
+
+### Production Environment Variables Checklist
+
+Ensure these variables are correctly configured in your deployment settings:
+
+#### Backend Service (Railway Config)
+| Variable Name | Description | Example / Recommended Value |
+|---|---|---|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@host:5432/db` |
+| `REDIS_URL` | Redis connection URL | `redis://default:pass@redis-host:6379` |
+| `JWT_SECRET` | Secret key to sign custom Auth JWTs | *Long secure random string* |
+| `NOMBA_CLIENT_ID` | Production/Sandbox Nomba API Client ID | `client_...` |
+| `NOMBA_CLIENT_SECRET` | Production/Sandbox Nomba API Client Secret | `secret_...` |
+| `NOMBA_ACCOUNT_ID` | Nomba Account ID | `acc_...` |
+| `OPENAI_API_KEY` | OpenAI API credentials for GPT-4o agent | `sk-proj-...` |
+| `CLERK_SECRET_KEY` | Clerk backend Secret Key | `sk_live_...` |
+| `FRONTEND_URL` | Production domain of the frontend app | `https://nombaos.vercel.app` |
+| `PORT` | Local container port for NestJS API listener | `3001` |
+
+#### Frontend Service (Vercel Config)
+| Variable Name | Description | Example / Recommended Value |
+|---|---|---|
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk client Publishable Key | `pk_live_...` |
+| `CLERK_SECRET_KEY` | Clerk backend Secret Key (Vercel Middleware) | `sk_live_...` |
+| `NEXT_PUBLIC_API_URL` | Production backend API domain | `https://backend-production.up.railway.app` |
+

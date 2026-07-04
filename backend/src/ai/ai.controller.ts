@@ -1,12 +1,16 @@
 import {
-  Controller, Post, Get, Delete, Body, Param, Query,
-  UseGuards, Request, Res, Sse, MessageEvent,
+  Controller,
+  Post,
+  Get,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { Observable, from } from 'rxjs';
-import { map } from 'rxjs/operators';
 
 @ApiTags('AI')
 @ApiBearerAuth()
@@ -22,7 +26,9 @@ export class AiController {
   ) {
     const user = req.user;
     if (!user.business) {
-      return { message: 'Please set up your business profile first to use NombaOS.' };
+      return {
+        message: 'Please set up your business profile first to use NombaOS.',
+      };
     }
     return this.aiService.chat(
       user.id,
@@ -35,7 +41,8 @@ export class AiController {
   @Post('confirm-transfer')
   async confirmTransfer(
     @Request() req,
-    @Body() dto: {
+    @Body()
+    dto: {
       amount: number;
       beneficiaryAccountNumber: string;
       beneficiaryBankCode: string;

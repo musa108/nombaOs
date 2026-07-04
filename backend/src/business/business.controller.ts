@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Put, Body, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { BusinessService } from './business.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
@@ -13,7 +21,8 @@ export class BusinessController {
   @Post('setup')
   setup(
     @Request() req,
-    @Body() dto: { businessName: string; industry: string; nombaAccountId?: string },
+    @Body()
+    dto: { businessName: string; industry: string; nombaAccountId?: string },
   ) {
     return this.businessService.createOrUpdate(req.user.id, dto);
   }
@@ -21,7 +30,8 @@ export class BusinessController {
   @Put('update')
   update(
     @Request() req,
-    @Body() dto: { businessName?: string; industry?: string; nombaAccountId?: string },
+    @Body()
+    dto: { businessName?: string; industry?: string; nombaAccountId?: string },
   ) {
     return this.businessService.createOrUpdate(req.user.id, dto as any);
   }

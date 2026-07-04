@@ -48,7 +48,13 @@ export class TransactionsService {
       this.prisma.transaction.count({ where }),
     ]);
 
-    return { transactions, total, page, limit, pages: Math.ceil(total / limit) };
+    return {
+      transactions,
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit),
+    };
   }
 
   async create(
@@ -78,8 +84,16 @@ export class TransactionsService {
   }
 
   // Sync Nomba transactions into local DB
-  async syncFromNomba(businessId: string, startDate?: string, endDate?: string) {
-    const nombaData = await this.nomba.getTransactions({ startDate, endDate, limit: 100 });
+  async syncFromNomba(
+    businessId: string,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    const nombaData = await this.nomba.getTransactions({
+      startDate,
+      endDate,
+      limit: 100,
+    });
     const nombaTransactions = nombaData?.data || [];
 
     let synced = 0;
@@ -94,8 +108,12 @@ export class TransactionsService {
             businessId,
             amount: tx.amount || tx.transactionAmount,
             type: tx.transactionType === 'DEBIT' ? 'DEBIT' : 'CREDIT',
-            status: tx.status === 'SUCCESSFUL' ? 'SUCCESSFUL' : 
-                    tx.status === 'FAILED' ? 'FAILED' : 'PENDING',
+            status:
+              tx.status === 'SUCCESSFUL'
+                ? 'SUCCESSFUL'
+                : tx.status === 'FAILED'
+                  ? 'FAILED'
+                  : 'PENDING',
             nombaRef: tx.transactionRef || tx.id,
             description: tx.narration || tx.description,
             reference: tx.merchantTxRef || tx.transactionRef,
@@ -219,7 +237,12 @@ export class TransactionsService {
     await this.cache.invalidateBusiness(businessId);
 
     // PostHog: track confirmed transfers (fire-and-forget)
-    this.posthog.trackTransferConfirmed(businessId, businessId, payload.amount, reference);
+    this.posthog.trackTransferConfirmed(
+      businessId,
+      businessId,
+      payload.amount,
+      reference,
+    );
 
     return { transaction, nombaResult };
   }

@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
@@ -11,7 +21,11 @@ export class ProductsController {
   constructor(private productsService: ProductsService) {}
 
   @Get()
-  findAll(@Request() req, @Query('category') category: string, @Query('lowStock') lowStock: string) {
+  findAll(
+    @Request() req,
+    @Query('category') category: string,
+    @Query('lowStock') lowStock: string,
+  ) {
     return this.productsService.findAll(req.user.business.id, {
       category,
       lowStock: lowStock === 'true',
@@ -30,7 +44,10 @@ export class ProductsController {
 
   @Get('low-stock')
   getLowStock(@Request() req, @Query('threshold') threshold: number) {
-    return this.productsService.getLowStockAlerts(req.user.business.id, threshold || 10);
+    return this.productsService.getLowStockAlerts(
+      req.user.business.id,
+      threshold || 10,
+    );
   }
 
   @Get('inventory-summary')
