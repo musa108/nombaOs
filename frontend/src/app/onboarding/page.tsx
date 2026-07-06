@@ -48,9 +48,9 @@ export default function OnboardingPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold mx-auto mb-4"
-            style={{ background: '#F7A825', color: '#0A0B0F' }}>A</div>
+            style={{ background: '#F7A825', color: '#0A0B0F' }}>N</div>
           <h1 className="text-2xl font-bold">Set up your business</h1>
-          <p className="text-slate-400 mt-1">Let's get Auxo configured for you</p>
+          <p className="text-slate-400 mt-1">Let's get NombaOS configured for you</p>
         </div>
 
         <div className="rounded-2xl p-8" style={{ background: '#12141A', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -111,7 +111,7 @@ export default function OnboardingPage() {
             disabled={loading || !form.businessName || !form.industry}
             className="w-full py-3 rounded-xl font-semibold text-[#0A0B0F] transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ background: '#F7A825' }}>
-            {loading ? 'Setting up…' : 'Launch Auxo →'}
+            {loading ? 'Setting up…' : 'Launch NombaOS →'}
           </button>
         </div>
       </div>

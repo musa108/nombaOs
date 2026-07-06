@@ -4,7 +4,7 @@ import { PostHogProvider } from '@/components/PostHogProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Auxo — AI Merchant Operating System',
+  title: 'NombaOS — AI Merchant Operating System',
   description: 'Manage your business through natural conversation',
 };
 

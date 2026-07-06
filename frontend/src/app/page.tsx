@@ -13,8 +13,8 @@ export default async function Home() {
       {/* Logo */}
       <div className="mb-8 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold"
-          style={{ background: '#F7A825', color: '#0A0B0F' }}>A</div>
-        <span className="text-2xl font-semibold tracking-tight">Auxo</span>
+          style={{ background: '#F7A825', color: '#0A0B0F' }}>N</div>
+        <span className="text-2xl font-semibold tracking-tight">NombaOS</span>
       </div>
 
       <h1 className="text-5xl md:text-6xl font-bold text-center max-w-2xl leading-tight mb-4">
