@@ -28,10 +28,12 @@ export class NombaService {
         grant_type: 'client_credentials',
         client_id: this.config.get('NOMBA_CLIENT_ID'),
         client_secret: this.config.get('NOMBA_CLIENT_SECRET'),
+        // Nomba requires the parent account ID in every auth request
+        accountId: this.config.get('NOMBA_ACCOUNT_ID'),
       });
 
-      const token: string | undefined = response.data?.access_token;
-      const expiresIn: number = response.data?.expires_in ?? 3600;
+      const token: string | undefined = response.data?.data?.access_token ?? response.data?.access_token;
+      const expiresIn: number = response.data?.data?.expires_in ?? response.data?.expires_in ?? 3600;
 
       if (!token) {
         this.logger.error(
@@ -61,6 +63,8 @@ export class NombaService {
     return {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
+      // Scope all calls to the parent account; sub-account is used in path params
+      accountId: this.config.get('NOMBA_ACCOUNT_ID'),
     };
   }
 

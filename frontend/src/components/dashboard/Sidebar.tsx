@@ -40,9 +40,9 @@ export default function Sidebar({ business }: { business?: any }) {
       {/* Logo */}
       <div className="px-5 py-5 flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0"
-          style={{ background: '#F7A825', color: '#0A0B0F' }}>N</div>
+          style={{ background: '#F7A825', color: '#0A0B0F' }}>A</div>
         <div>
-          <div className="text-sm font-semibold leading-tight">NombaOS</div>
+          <div className="text-sm font-semibold leading-tight">Auxo</div>
           {business && (
             <div className="text-xs text-slate-500 truncate max-w-[120px]">{business.businessName}</div>
           )}

@@ -1,6 +1,6 @@
-# NombaOS Frontend
+# Auxo Frontend
 
-This is the Next.js 15 App Router frontend application for **NombaOS** — the AI Merchant Operating System. It provides an intuitive, responsive dashboard interface designed for modern merchants to manage customer interactions, invoices, transactions, inventory, and leverage an autonomous AI agent for operations.
+This is the Next.js 15 App Router frontend application for **Auxo** — the AI Merchant Operating System. It provides an intuitive, responsive dashboard interface designed for modern merchants to manage customer interactions, invoices, transactions, inventory, and leverage an autonomous AI agent for operations.
 
 ## Features & Tech Stack
 

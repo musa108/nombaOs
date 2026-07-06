@@ -82,7 +82,7 @@ export default function ChatPage() {
             <Sparkles size={15} className="text-[#F7A825]" />
           </div>
           <div>
-            <h1 className="font-semibold text-sm">NombaOS Assistant</h1>
+            <h1 className="font-semibold text-sm">Auxo Assistant</h1>
             <p className="text-xs text-slate-500">Ask anything about your business</p>
           </div>
         </div>
@@ -149,7 +149,7 @@ export default function ChatPage() {
             </button>
           </div>
           <p className="text-[10px] text-slate-600 text-center mt-2">
-            NombaOS can make mistakes. Financial transfers always require your confirmation.
+            Auxo can make mistakes. Financial transfers always require your confirmation.
           </p>
         </div>
       </div>

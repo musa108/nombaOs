@@ -6,14 +6,14 @@ class ApiClient {
   setToken(token: string) {
     this.token = token;
     if (typeof window !== 'undefined') {
-      localStorage.setItem('nombaos_token', token);
+      localStorage.setItem('auxo_token', token);
     }
   }
 
   getToken(): string | null {
     if (this.token) return this.token;
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('nombaos_token');
+      return localStorage.getItem('auxo_token');
     }
     return null;
   }
@@ -21,7 +21,7 @@ class ApiClient {
   clearToken() {
     this.token = null;
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('nombaos_token');
+      localStorage.removeItem('auxo_token');
     }
   }
 
