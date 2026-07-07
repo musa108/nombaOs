@@ -11,7 +11,7 @@ export class NombaService {
 
   constructor(private config: ConfigService) {
     this.client = axios.create({
-      baseURL: this.config.get('NOMBA_BASE_URL', 'https://api.nomba.com/v1'),
+      baseURL: this.config.get('NOMBA_BASE_URL', 'https://sandbox.nomba.com/v1'),
       headers: { 'Content-Type': 'application/json' },
     });
   }
@@ -198,7 +198,7 @@ export class NombaService {
     // Determine if we transfer from parent or sub-account pocket
     const baseUrl = this.config.get(
       'NOMBA_BASE_URL',
-      'https://api.nomba.com/v1',
+      'https://sandbox.nomba.com/v1',
     );
     const v2BaseUrl = baseUrl.replace('/v1', '/v2');
     const transferUrl = subAccountId
