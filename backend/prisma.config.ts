@@ -6,6 +6,8 @@ export default defineConfig({
     path: 'prisma/migrations',
   },
   datasource: {
-    url: 'postgresql://postgres:hajjiomar22@localhost:5432/NombaOs',
+    url:
+      process.env.DATABASE_URL ||
+      'postgresql://postgres:hajjiomar22@localhost:5432/NombaOs',
   },
 });
