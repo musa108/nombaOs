@@ -1,6 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
+import { getRedisClient } from './cache.module';
 
 @Injectable()
 export class CacheService {
@@ -44,5 +45,12 @@ export class CacheService {
       this.del(`revenue-analytics:${businessId}`),
       this.del(`dashboard-summary:${businessId}`),
     ]);
+  }
+
+  /** Return basic Redis client status for health checks. */
+  getRedisStatus(): { available: boolean; status?: string } {
+    const client = getRedisClient();
+    if (!client) return { available: false };
+    return { available: true, status: client.status };
   }
 }
