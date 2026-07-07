@@ -72,7 +72,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col min-h-0 h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -95,7 +95,7 @@ export default function ChatPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center max-w-md mx-auto text-center">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 pulse-glow"
