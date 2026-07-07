@@ -1,6 +1,8 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
+# Ensure Prisma schema is available for postinstall hooks that run `prisma generate`
+COPY prisma ./prisma
 RUN npm ci || npm install
 COPY . .
 RUN npx prisma generate
