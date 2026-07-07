@@ -3,11 +3,7 @@ import { CacheModule as NestCacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { redisStore } from 'cache-manager-ioredis-yet';
 import Redis from 'ioredis';
-
-let redisClient: Redis | null = null;
-export function getRedisClient(): Redis | null {
-  return redisClient;
-}
+import { setRedisClient, clearRedisClient } from './redis.client';
 import { CacheService } from './cache.service';
 
 /**
@@ -68,11 +64,11 @@ import { CacheService } from './cache.service';
 
           client.on('end', () => {
             console.warn('[CacheModule] Redis connection closed');
-            redisClient = null;
+            clearRedisClient();
           });
 
           // expose client for other modules (health checks, metrics)
-          redisClient = client;
+          setRedisClient(client);
 
           // Pass the preconfigured client to the redis store (so cache-manager
           // reuses it instead of creating its own instance).
