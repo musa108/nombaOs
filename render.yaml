@@ -1,0 +1,72 @@
+services:
+  # Backend NestJS API Web Service
+  - type: web
+    name: nombaos-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci && npx prisma generate && npm run build
+    # Runs prisma migrate deploy to apply migrations safely before starting the app
+    startCommand: npx prisma migrate deploy && node dist/main
+    plan: starter # Starter plan is recommended for NestJS apps
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: FRONTEND_URL
+        value: https://your-frontend.vercel.app # Update this with your frontend URL
+
+      # Automatically link PostgreSQL database URL from Render
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nombaos-db
+          property: connectionString
+
+      # Automatically link Redis URL from Render
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: nombaos-redis
+          property: connectionString
+
+      # Required App Secrets (must be provided manually in the Render dashboard)
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CLERK_SECRET_KEY
+        sync: false # Set manually in Render dashboard
+      - key: CLERK_WEBHOOK_SECRET
+        sync: false # Set manually in Render dashboard
+      - key: NOMBA_BASE_URL
+        value: https://api.nomba.com/v1
+      - key: NOMBA_CLIENT_ID
+        sync: false # Set manually in Render dashboard
+      - key: NOMBA_CLIENT_SECRET
+        sync: false # Set manually in Render dashboard
+      - key: NOMBA_ACCOUNT_ID
+        sync: false # Set manually in Render dashboard
+      - key: GEMINI_API_KEY
+        sync: false # Set manually in Render dashboard
+
+      # Optional Integrations
+      - key: SENTRY_DSN
+        sync: false
+      - key: POSTHOG_API_KEY
+        sync: false
+      - key: POSTHOG_HOST
+        value: https://app.posthog.com
+
+# PostgreSQL Database Service
+databases:
+  - name: nombaos-db
+    plan: free # Can be upgraded to starter/standard
+    databaseName: nombaos
+    user: nombaos
+
+# Redis Cache Service
+interfaces:
+  - type: redis
+    name: nombaos-redis
+    plan: free # Can be upgraded if needed
+    ipAllowList: [] # Only accessible internally by the nombaos-backend service

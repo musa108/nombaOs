@@ -91,3 +91,32 @@ npm run start:prod
 ```
 
 API documentation is accessible at `http://localhost:3001/api/docs` using Swagger.
+
+---
+
+## Deploying to Render
+
+This codebase is configured for one-click deployment to **Render** using a Blueprint specification ([render.yaml](file:///c:/Users/sysadmin/Downloads/NombaOS_full_implementation/render.yaml)) located in the root folder.
+
+### Step 1: Connect your Repository to Render
+1. Log in to the [Render Dashboard](https://dashboard.render.com).
+2. Click **New +** and select **Blueprint**.
+3. Connect your GitHub/GitLab repository containing this project.
+
+### Step 2: Configure Blueprint Stack
+Render will read the `render.yaml` file and automatically configure three services:
+1. **nombaos-backend**: The NestJS Web Service (Node.js runtime).
+2. **nombaos-db**: PostgreSQL database instance.
+3. **nombaos-redis**: Redis instance for cache management.
+
+### Step 3: Populate Secret Variables
+In the Render Web Console, you will be prompted to fill in the missing environment secrets:
+- `JWT_SECRET`: (Automatically generated for you by the blueprint)
+- `CLERK_SECRET_KEY`: Copy this from your Clerk Developer Settings Dashboard.
+- `NOMBA_CLIENT_ID`: Copy from your Nomba Hackathon Dashboard.
+- `NOMBA_CLIENT_SECRET`: Copy from your Nomba Hackathon Dashboard.
+- `NOMBA_ACCOUNT_ID`: Your Nomba Parent Account ID.
+- `GEMINI_API_KEY`: Copy from Google AI Studio.
+
+Click **Approve** to build, migrate, and run the system. Render will automatically apply database migrations using `npx prisma migrate deploy` prior to launching the NestJS server.
+

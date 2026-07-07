@@ -166,18 +166,21 @@ To deploy NombaOS to a live production environment, follow these steps to provis
 1. Provision a Redis database (v7+) (e.g., Upstash Redis, Railway Redis plugin, Redis Labs).
 2. Copy the Redis URI connection string (e.g., `redis://default:password@host:port`).
 
-### 3. Backend Deployment (Railway)
-1. Log in to your [Railway](https://railway.app/) dashboard and create a new project.
-2. Select **Deploy from GitHub** and connect this repository.
-3. In the service settings, configure the **Root Directory** to `backend`.
-4. Railway will automatically detect [backend/railway.toml](file:///c:/Users/sysadmin/Downloads/NombaOS_full_implementation/backend/railway.toml) and build the project using [backend/Dockerfile](file:///c:/Users/sysadmin/Downloads/NombaOS_full_implementation/backend/Dockerfile).
-5. Add the necessary **Environment Variables** (see checklist below) in the service "Variables" tab.
-6. The startup sequence configured in `railway.toml` will run:
+### 3. Backend Deployment (Render)
+1. Log in to your [Render](https://render.com) dashboard.
+2. Click **New +** and select **Blueprint**.
+3. Connect your repository. Render will automatically read the [render.yaml](file:///c:/Users/sysadmin/Downloads/NombaOS_full_implementation/render.yaml) file at the root.
+4. Render will orchestrate the creation of your:
+   - PostgreSQL Database instance (`nombaos-db`)
+   - Redis Cache instance (`nombaos-redis`)
+   - NestJS Web Service (`nombaos-backend`)
+5. During setup, fill in the prompted environment variables (see checklist below) in the Render console.
+6. The startup sequence configured in `render.yaml` will run:
    ```bash
-   npm run prisma:migrate -- --name deploy && node dist/main
+   npx prisma migrate deploy && node dist/main
    ```
    This automatically applies any pending database schema updates and boots the NestJS server.
-7. Under settings, generate a domain (or bind a custom domain). Copy this API URL (e.g., `https://backend-production.up.railway.app`).
+7. Once deployed, Render will provide a backend Web Service URL (e.g., `https://nombaos-backend.onrender.com`). Copy this URL.
 
 ### 4. Frontend Deployment (Vercel)
 1. Log in to your [Vercel](https://vercel.com/) dashboard and click **Add New Project**.
@@ -202,7 +205,7 @@ To deploy NombaOS to a live production environment, follow these steps to provis
 
 Ensure these variables are correctly configured in your deployment settings:
 
-#### Backend Service (Railway Config)
+#### Backend Service (Render Config)
 | Variable Name | Description | Example / Recommended Value |
 |---|---|---|
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@host:5432/db` |
@@ -221,5 +224,5 @@ Ensure these variables are correctly configured in your deployment settings:
 |---|---|---|
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk client Publishable Key | `pk_live_...` |
 | `CLERK_SECRET_KEY` | Clerk backend Secret Key (Vercel Middleware) | `sk_live_...` |
-| `NEXT_PUBLIC_API_URL` | Production backend API domain | `https://backend-production.up.railway.app` |
+| `NEXT_PUBLIC_API_URL` | Production backend API domain | `https://nombaos-backend.onrender.com` |
 
