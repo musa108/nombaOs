@@ -13,6 +13,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package*.json ./
+# Ensure Prisma schema is available for postinstall hooks in production image
+COPY prisma ./prisma
 RUN npm ci --omit=dev || npm install --omit=dev
 # Copy Prisma schema + generated client
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
