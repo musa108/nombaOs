@@ -32,7 +32,6 @@ model Business {
   products     Product[]
   transactions Transaction[]
   invoices     Invoice[]
-  memories     BusinessMemory[]
   notifications Notification[]
 }
 
@@ -98,31 +97,6 @@ model Conversation {
   messages  Json     @default("[]")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-// Vector Memory layer (System Architecture §7).
-// Stores embedded business facts, merchant preferences, and notable conversation
-// moments so the AI can retrieve semantically relevant context beyond the last
-// 20 messages of raw history. embedding is Unsupported because Prisma has no
-// native `vector` scalar; it's read/written via $queryRaw / $executeRaw in
-// MemoryService using the `pgvector` npm package for (de)serialization.
-model BusinessMemory {
-  id         String                 @id @default(cuid())
-  businessId String
-  business   Business               @relation(fields: [businessId], references: [id])
-  kind       MemoryKind
-  content    String
-  metadata   Json?
-
-  createdAt  DateTime               @default(now())
-
-  @@index([businessId])
-}
-
-enum MemoryKind {
-  PREFERENCE
-  FACT
-  CONVERSATION_SUMMARY
 }
 
 // Smart Notifications (Core Features §6 / Development Phases Phase 7).

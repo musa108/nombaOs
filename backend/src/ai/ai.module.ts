@@ -7,7 +7,6 @@ import { InvoicesModule } from '../invoices/invoices.module';
 import { TransactionsModule } from '../transactions/transactions.module';
 import { CustomersModule } from '../customers/customers.module';
 import { ProductsModule } from '../products/products.module';
-import { MemoryModule } from '../memory/memory.module';
 
 @Module({
   imports: [
@@ -17,7 +16,6 @@ import { MemoryModule } from '../memory/memory.module';
     TransactionsModule,
     CustomersModule,
     ProductsModule,
-    MemoryModule,
   ],
   providers: [AiService],
   controllers: [AiController],

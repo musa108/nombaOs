@@ -14,7 +14,7 @@ import { NombaModule } from './nomba/nomba.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { PrismaModule } from './common/prisma.module';
 import { CacheModule } from './common/cache.module';
-import { MemoryModule } from './memory/memory.module';
+
 import { NotificationsModule } from './notifications/notifications.module';
 import { PostHogModule } from './common/posthog.module';
 
@@ -26,7 +26,6 @@ import { PostHogModule } from './common/posthog.module';
     ScheduleModule.forRoot(),
     PrismaModule,
     CacheModule,
-    MemoryModule,
     PostHogModule,
     NotificationsModule,
     AuthModule,

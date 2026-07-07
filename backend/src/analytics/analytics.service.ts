@@ -155,15 +155,15 @@ export class AnalyticsService {
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     return this.prisma.$queryRaw<any[]>`
       SELECT 
-        DATE(created_at) as date,
+        DATE("createdAt") as date,
         SUM(CASE WHEN type = 'CREDIT' THEN amount ELSE 0 END) as revenue,
         SUM(CASE WHEN type = 'DEBIT' THEN amount ELSE 0 END) as expenses,
         COUNT(*) as transactions
-      FROM transactions
-      WHERE business_id = ${businessId}
-        AND created_at >= ${startDate}
+      FROM "Transaction"
+      WHERE "businessId" = ${businessId}
+        AND "createdAt" >= ${startDate}
         AND status = 'SUCCESSFUL'
-      GROUP BY DATE(created_at)
+      GROUP BY DATE("createdAt")
       ORDER BY date ASC
     `;
   }

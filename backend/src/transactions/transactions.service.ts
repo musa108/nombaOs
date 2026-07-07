@@ -175,17 +175,16 @@ export class TransactionsService {
         _sum: { amount: true },
         _count: true,
       }),
-      // Daily breakdown
       this.prisma.$queryRaw`
-        SELECT DATE(created_at) as date,
+        SELECT DATE("createdAt") as date,
                SUM(CASE WHEN type = 'CREDIT' THEN amount ELSE 0 END) as revenue,
                SUM(CASE WHEN type = 'DEBIT' THEN amount ELSE 0 END) as expenses,
                COUNT(*) as count
-        FROM transactions
-        WHERE business_id = ${businessId}
-          AND created_at >= ${startDate}
+        FROM "Transaction"
+        WHERE "businessId" = ${businessId}
+          AND "createdAt" >= ${startDate}
           AND status = 'SUCCESSFUL'
-        GROUP BY DATE(created_at)
+        GROUP BY DATE("createdAt")
         ORDER BY date DESC
       `,
     ]);

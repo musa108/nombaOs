@@ -8,7 +8,7 @@ import { InvoicesService } from '../invoices/invoices.service';
 import { TransactionsService } from '../transactions/transactions.service';
 import { CustomersService } from '../customers/customers.service';
 import { ProductsService } from '../products/products.service';
-import { MemoryService } from '../memory/memory.service';
+
 import { PostHogService } from '../common/posthog.service';
 import { AI_TOOLS } from './ai.tools';
 
@@ -48,7 +48,6 @@ export class AiService {
     private transactions: TransactionsService,
     private customers: CustomersService,
     private products: ProductsService,
-    private memory: MemoryService,
     private posthog: PostHogService,
   ) {
     const apiKey = this.config.get<string>('GEMINI_API_KEY');
@@ -328,17 +327,13 @@ export class AiService {
     }
     const history = this.parseStoredHistory(conversation.messages);
 
-    // Build context: live DB aggregates + semantically relevant long-term memory
-    const [businessContext, memoryContext] = await Promise.all([
-      this.analytics.getBusinessContext(businessId),
-      this.memory.recallAsContext(businessId, userMessage),
-    ]);
+    // Build context: live DB aggregates
+    const businessContext = await this.analytics.getBusinessContext(businessId);
 
     const systemInstruction = `You are NombaOS, an intelligent AI business assistant for African merchants. Help merchants manage their business through natural conversation.
 
 BUSINESS CONTEXT (current live data):
 ${businessContext}
-${memoryContext ? `\nRELEVANT LONG-TERM MEMORY (learned from past conversations):\n${memoryContext}\n` : ''}
 YOUR CAPABILITIES:
 - Retrieve and analyze real-time financial data (revenue, transactions, balances)
 - Create invoices and generate Nomba payment links
@@ -396,19 +391,38 @@ SECURITY (prompt injection protection):
 
     // Agentic loop: up to 5 iterations (same as before)
     for (let i = 0; i < 5; i++) {
-      const response = await this.ai.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents,
-        config: {
-          systemInstruction,
-          tools: geminiTools,
-          temperature: 0.3,
-          // Disable SDK auto-execution so the transfer confirmation flow works.
-          // Without this, the SDK would auto-call executeTool and bypass the
-          // merchant approval step for financial operations.
-          automaticFunctionCalling: { disable: true },
-        },
-      });
+      let response;
+      try {
+        response = await this.ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents,
+          config: {
+            systemInstruction,
+            tools: geminiTools,
+            temperature: 0.3,
+            // Disable SDK auto-execution so the transfer confirmation flow works.
+            // Without this, the SDK would auto-call executeTool and bypass the
+            // merchant approval step for financial operations.
+            automaticFunctionCalling: { disable: true },
+          },
+        });
+      } catch (err) {
+        this.logger.error('Gemini generateContent failed', err);
+        const errMsg = err?.message || '';
+        if (
+          err?.status === 429 ||
+          errMsg.includes('quota') ||
+          errMsg.includes('limit') ||
+          errMsg.includes('429')
+        ) {
+          return {
+            message:
+              "I'm sorry, but the AI Assistant is currently experiencing high volume or has exceeded its Gemini API rate limits. Please try again in a few seconds or upgrade your API key quota.",
+            conversationId: conversation.id,
+          };
+        }
+        throw err;
+      }
 
       const candidate = response.candidates?.[0];
       if (!candidate) break;
@@ -440,12 +454,6 @@ SECURITY (prompt injection protection):
           businessId,
           toolsUsed,
           conversation.id,
-        );
-
-        // Fire-and-forget memory write for durable facts/preferences
-        this.persistMemoryIfNotable(businessId, userMessage, finalText).catch(
-          (err) =>
-            this.logger.error('Memory write failed (non-fatal)', err.message),
         );
 
         return {
@@ -518,30 +526,5 @@ SECURITY (prompt injection protection):
       where: { id: conversationId },
       data: { messages: [] },
     });
-  }
-
-  // ─── Memory persistence ─────────────────────────────────────────────────────
-
-  private async persistMemoryIfNotable(
-    businessId: string,
-    userMessage: string,
-    reply: string,
-  ): Promise<void> {
-    const preferenceSignals =
-      /\b(always|never|prefer|by default|from now on|remember that|my supplier|my bank)\b/i;
-    if (preferenceSignals.test(userMessage)) {
-      await this.memory.remember(businessId, 'PREFERENCE', userMessage, {
-        source: 'chat',
-      });
-      return;
-    }
-    if (userMessage.length > 40 && reply.length > 60) {
-      await this.memory.remember(
-        businessId,
-        'CONVERSATION_SUMMARY',
-        `Merchant asked: "${userMessage}" — Summary: ${reply.slice(0, 300)}`,
-        { source: 'chat' },
-      );
-    }
   }
 }

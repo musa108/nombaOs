@@ -44,15 +44,14 @@ export class CustomersService {
   }
 
   async getTopCustomers(businessId: string, limit = 10) {
-    // Customers with highest total spending
     const customers = await this.prisma.$queryRaw<any[]>`
       SELECT c.id, c.name, c.email, c.phone,
              COUNT(t.id) as transaction_count,
              SUM(t.amount) as total_spent,
-             MAX(t.created_at) as last_purchase
-      FROM customers c
-      LEFT JOIN transactions t ON t.customer_id = c.id AND t.type = 'CREDIT' AND t.status = 'SUCCESSFUL'
-      WHERE c.business_id = ${businessId}
+             MAX(t."createdAt") as last_purchase
+      FROM "Customer" c
+      LEFT JOIN "Transaction" t ON t."customerId" = c.id AND t.type = 'CREDIT' AND t.status = 'SUCCESSFUL'
+      WHERE c."businessId" = ${businessId}
       GROUP BY c.id, c.name, c.email, c.phone
       ORDER BY total_spent DESC NULLS LAST
       LIMIT ${limit}
@@ -66,11 +65,11 @@ export class CustomersService {
              COUNT(DISTINCT t.id) as visits,
              SUM(t.amount) as lifetime_value,
              AVG(t.amount) as avg_transaction,
-             MIN(t.created_at) as first_purchase,
-             MAX(t.created_at) as last_purchase
-      FROM customers c
-      LEFT JOIN transactions t ON t.customer_id = c.id AND t.status = 'SUCCESSFUL'
-      WHERE c.business_id = ${businessId}
+             MIN(t."createdAt") as first_purchase,
+             MAX(t."createdAt") as last_purchase
+      FROM "Customer" c
+      LEFT JOIN "Transaction" t ON t."customerId" = c.id AND t.status = 'SUCCESSFUL'
+      WHERE c."businessId" = ${businessId}
       GROUP BY c.id, c.name
       ORDER BY lifetime_value DESC NULLS LAST
     `;
